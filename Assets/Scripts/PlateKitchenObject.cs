@@ -1,9 +1,16 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PlateKitchenObject : KitchenObject
 {
+    public event EventHandler<OnIngredientAddedEventArgs> OnIngredientAdded;
+    public class OnIngredientAddedEventArgs : EventArgs
+    {
+        public KitchenObjectSO KitchenObjectSO;
+    }
+
     [SerializeField] private List<KitchenObjectSO> allowedKitchenObjectSoArray;
 
     private List<KitchenObjectSO> kitchenObjectSOArray;
@@ -19,8 +26,14 @@ public class PlateKitchenObject : KitchenObject
         if (!kitchenObjectSOArray.Contains(kitchenObjectSO) && allowedKitchenObjectSoArray.Contains(kitchenObjectSO))
         {
             kitchenObjectSOArray.Add(kitchenObjectSO);
+            OnIngredientAdded?.Invoke(this, new OnIngredientAddedEventArgs { KitchenObjectSO = kitchenObjectSO });
             return true;
         }
         return false;
+    }
+
+    public List<KitchenObjectSO> GetKitchenObjectSOArray()
+    {
+        return kitchenObjectSOArray;
     }
 }

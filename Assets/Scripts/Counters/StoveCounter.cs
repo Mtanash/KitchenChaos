@@ -23,6 +23,7 @@ public class StoveCounter : BaseCounter, IHasProgress
         IDLE,
         FRYING,
         FRIED,
+        BURNED
     }
 
     private float fryingTimer;
@@ -77,7 +78,7 @@ public class StoveCounter : BaseCounter, IHasProgress
 
                 if (burningTimer > currentBurningRecipeSO.maxBurningTime)
                 {
-                    state = State.IDLE;
+                    state = State.BURNED;
                     burningTimer = 0;
                     OnStoveStateChange?.Invoke(this, new OnStoveStateChangeEventArgs { state = state });
 
@@ -88,6 +89,13 @@ public class StoveCounter : BaseCounter, IHasProgress
                     KitchenObject.SpawnKitchenObject(currentBurningRecipeSO.output, this);
                 }
 
+                break;
+            case State.BURNED:
+                OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
+                {
+                    progressFillAmoutNormalized = 0f
+                });
+                state = State.IDLE;
                 break;
             default:
                 break;
@@ -110,6 +118,27 @@ public class StoveCounter : BaseCounter, IHasProgress
                     progressFillAmoutNormalized = 0f
                 });
                 GetKitchenObject().SetKitchenObjectParent(player);
+            }
+            else // player has a kitchen object and the counter has a kitchen object
+            {
+
+                if (player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject))
+                {
+                    // player has a plat
+
+                    bool ingredientAdded = plateKitchenObject.TryAddIngredient(GetKitchenObject().GetKitchenObjectSO());
+
+                    if (ingredientAdded)
+                    {
+                        GetKitchenObject().DestroySelf();
+                        state = State.IDLE;
+                        OnStoveStateChange?.Invoke(this, new OnStoveStateChangeEventArgs { state = state });
+                        OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
+                        {
+                            progressFillAmoutNormalized = 0f
+                        });
+                    }
+                }
             }
         }
         else
